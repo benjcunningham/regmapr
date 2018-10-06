@@ -4,27 +4,36 @@ from .utils import LockedDropout
 
 class REGMAPR(nn.Module):
 
-    def __init__(self, config, vocab_size):
+    def __init__(self,
+                 vocab_size,
+                 embed_dim,
+                 locked_dropout,
+                 lstm_dim,
+                 recurrent_dropout,
+                 hidden_dim,
+                 dropout,
+                 classes):
 
         super(REGMAPR, self).__init__()
 
-        self.embed = nn.Embedding(vocab_size, config["embed_size"])
-        self.lockdrop = LockedDropout(config["embed_dropout"])
+        self.classes = classes
+        self.embed = nn.Embedding(vocab_size, embed_dim)
+        self.lockdrop = LockedDropout(locked_dropout)
         self.bilstm = nn.Sequential(
             nn.LSTM(
-                config["embed_dim"], config["lstm_dim"],
+                embed_dim, lstm_dim,
                 num_layers=1,
                 bidirectional=True,
-                dropout=config["lstm_dropout"]
+                dropout=recurrent_dropout
             ),
             # TODO: Max pooling across LSTM outputs 
 
         )
         self.fc = nn.Sequential(
-            nn.Linear(config["lstm_dim"], config["hidden_dim"]),
+            nn.Linear(lstm_dim, hidden_dim),
             nn.ReLU(inplace=True),
-            nn.Dropout(config["dropout"]),
-            nn.Linear(config["hidden_dim"], config["classes"])
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, classes)
         )
 
 
@@ -56,7 +65,7 @@ class REGMAPR(nn.Module):
         clf = self.fc(h12)
 
         # Exponential, clamp, for relatedness tasks
-        if config["classes"] == 1:
+        if self.classes == 1:
             clf = fc.exp().clamp(0, 1)
 
         return clf

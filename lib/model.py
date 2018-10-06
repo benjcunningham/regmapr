@@ -58,8 +58,10 @@ class REGMAPR(nn.Module):
         h2 = self.forward_once(s2)
 
         # Concatenate encodings
-        # TODO: Only use difference and product, for relatedness tasks
-        h12 = torch.cat([h1, h1 * h2, torch.abs(h1 - h2), h2])
+        if self.classes == 1:
+            h12 = torch.cat([h1 * h2, torch.abs(h1 - h2)])
+        else:
+            h12 = torch.cat([h1, h1 * h2, torch.abs(h1 - h2), h2])
 
         # Hidden and scoring layers
         clf = self.fc(h12)

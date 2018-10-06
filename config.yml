@@ -1,0 +1,26 @@
+model: "REGMAPR"
+
+data:
+    train:
+    valid:
+
+model: "REGMAPR"
+model_args:
+    embed_dim: 300
+    locked_dropout: 0.4
+    lstm_dim:
+    recurrent_dropout: 0.2
+    hidden_dim:
+    dropout: 0.4
+    classes: 1
+
+criterion: "MSELoss"
+criterion_args:
+    reduction: "elementwise_mean"
+
+optimizer: "Adam"
+optimizer_args:
+    lr: 0.001
+
+epochs: 10
+train_phases: ["train"]

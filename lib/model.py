@@ -26,7 +26,7 @@ class REGMAPR(nn.Module):
                 bidirectional=True,
                 dropout=recurrent_dropout
             ),
-            # TODO: Max pooling across LSTM outputs 
+            # TODO: Max pooling across LSTM outputs
 
         )
         self.fc = nn.Sequential(
@@ -37,13 +37,35 @@ class REGMAPR(nn.Module):
         )
 
 
+    @staticmethod
+    def get_ma(sent, twin):
+
+        ma = []
+        for i, seq in enumerate(sent):
+            ma.append([word in twin[i] for word in seq])
+
+        return ma
+
+
+    @staticmethod
+    def get_pa(sent, twin):
+
+        pa = []
+        for i, seq in enumerate(sent):
+            pa.append([0 for word in seq])
+
+        return pa
+
+
     def forward_once(self, sent, twin):
-      
+
         # Embedding + MA + PR
-        ma = torch.tensor([t in twin for t in sent], dtype=torch.float32)
-        # TODO: Paraphrase (PR) lookup indicators
+        ma = torch.tensor(self.get_ma(sent, twin), dtype=torch.float32)
+        pa = torch.tensor(self.get_pa(sent, twin), dtype=torch.float32)
         embed = self.embed(sent)
-        enc = torch.cat([ma.t(), embed], dim=1)
+
+        cat = [ma.unsqueeze(2), embed, pa.unsqueeze(2)]
+        enc = torch.cat(cat, dim=2)
 
         # Locked dropout
         drop = self.lockdrop(enc)
@@ -52,10 +74,18 @@ class REGMAPR(nn.Module):
 
 
     def forward(self, s1, s2):
+        """REGMAPR forward
+
+        Args:
+            s1: Tensor shape [pad, batch]
+            s2: Tensor shape [pad, batch]
+        """
+
+        s1, s2 = s1.t(), s2.t()
 
         # Siamese passes
-        h1 = self.forward_once(s1)
-        h2 = self.forward_once(s2)
+        h1 = self.forward_once(s1, s2)
+        h2 = self.forward_once(s2, s1)
 
         # Concatenate encodings
         if self.classes == 1:

@@ -19,18 +19,17 @@ class REGMAPR(nn.Module):
         self.classes = classes
         self.embed = nn.Embedding(vocab_size, embed_dim)
         self.lockdrop = LockedDropout(locked_dropout)
-        self.bilstm = nn.Sequential(
-            nn.LSTM(
-                embed_dim, lstm_dim,
-                num_layers=1,
-                bidirectional=True,
-                dropout=recurrent_dropout
-            ),
-            # TODO: Max pooling across LSTM outputs
-
+        self.bilstm = nn.LSTM(
+            embed_dim + 2, lstm_dim,
+            num_layers=1,
+            bidirectional=True,
+            batch_first=True,
+            dropout=recurrent_dropout
         )
+
+        in_dim = lstm_dim * (4 if self.classes == 1 else 8)
         self.fc = nn.Sequential(
-            nn.Linear(lstm_dim, hidden_dim),
+            nn.Linear(in_dim, hidden_dim),
             nn.ReLU(inplace=True),
             nn.Dropout(dropout),
             nn.Linear(hidden_dim, classes)
@@ -70,7 +69,11 @@ class REGMAPR(nn.Module):
         # Locked dropout
         drop = self.lockdrop(enc)
 
-        # TODO: BiLSTM with max pooling on each intermediate state
+        # BiLSTM + Max Pooling
+        lstm = self.bilstm(drop)[0]
+        out = torch.max(lstm, 1)[0]
+
+        return out
 
 
     def forward(self, s1, s2):
@@ -89,15 +92,15 @@ class REGMAPR(nn.Module):
 
         # Concatenate encodings
         if self.classes == 1:
-            h12 = torch.cat([h1 * h2, torch.abs(h1 - h2)])
+            h12 = torch.cat([h1 * h2, torch.abs(h1 - h2)], dim=1)
         else:
-            h12 = torch.cat([h1, h1 * h2, torch.abs(h1 - h2), h2])
+            h12 = torch.cat([h1, h1 * h2, torch.abs(h1 - h2), h2], dim=1)
 
         # Hidden and scoring layers
         clf = self.fc(h12)
 
         # Exponential, clamp, for relatedness tasks
         if self.classes == 1:
-            clf = fc.exp().clamp(0, 1)
+            clf = clf.exp().clamp(0, 1)
 
         return clf

@@ -44,10 +44,8 @@ class TrainingLoop():
 
             self.optimizer.zero_grad()
 
-            s1, s2, target = data
-
-            pred = self.model(s1, s2)
-            loss = self.criterion(pred, target)
+            pred = self.model(data.s1, data.s2)
+            loss = self.criterion(pred, data.target)
 
             loss.backward()
             self.optimizer.step()

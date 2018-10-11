@@ -8,8 +8,7 @@ class TrainingLoop():
         train_phases: Phases where training mode should be used
     """
 
-    def __init__(self, model, criterion, optimizer,
-                 train_phases=["train"]):
+    def __init__(self, model, criterion, optimizer, train_phases):
 
         self.model = model
         self.criterion = criterion

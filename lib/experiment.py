@@ -51,4 +51,6 @@ class Experiment():
 
     def run(self):
 
-        self.loop.epoch(config["epochs"], self.dataset)
+        epochs = self.config["epochs"]
+        dataloaders = self.dataset.iterators
+        self.loop.epoch(epochs, dataloaders)

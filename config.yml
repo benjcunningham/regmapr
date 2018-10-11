@@ -1,16 +1,22 @@
 model: "REGMAPR"
 
-data:
-    train:
-    valid:
+dataset: "SICKDataset"
+dataset_args:
+    data:
+        train:
+        valid:
+    batch_size:
+        train: 64
+        valid: 128
+    train_phases: ["train"]
 
 model: "REGMAPR"
 model_args:
     embed_dim: 300
     locked_dropout: 0.4
-    lstm_dim:
+    lstm_dim: 8
     recurrent_dropout: 0.2
-    hidden_dim:
+    hidden_dim: 64
     dropout: 0.4
     classes: 1
 
@@ -23,4 +29,3 @@ optimizer_args:
     lr: 0.001
 
 epochs: 10
-train_phases: ["train"]

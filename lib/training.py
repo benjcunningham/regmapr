@@ -1,3 +1,6 @@
+import torch
+import numpy as np
+
 class TrainingLoop():
     """Training loop
 
@@ -27,10 +30,10 @@ class TrainingLoop():
         for epoch in range(epochs):
             for phase in dataloaders.keys():
 
-                self.phase(phase, dataloaders[phase])
+                self.phase(epoch, phase, dataloaders[phase])
 
 
-    def phase(self, phase, dataloader):
+    def phase(self, epoch, phase, dataloader):
         """Train one phase of an epoch
 
         Args:
@@ -40,18 +43,21 @@ class TrainingLoop():
 
         self.model.train(phase in self.train_phases)
 
+        losses = []
         for i, data in enumerate(dataloader):
 
             self.optimizer.zero_grad()
 
+            target = data.target.unsqueeze(1)
             pred = self.model(data.s1, data.s2)
-            loss = self.criterion(pred, data.target)
+            loss = self.criterion(pred, target)
 
             loss.backward()
             self.optimizer.step()
 
-            batch = [i, len(self.dataloader)]
-            status(phase, epoch, batch, loss.item())
+            losses.append(loss.item())
+            batch = [i, len(dataloader)]
+            status(phase, epoch, batch, np.mean(losses))
 
 
 def status(phase, epoch, batch, loss):
@@ -65,5 +71,6 @@ def status(phase, epoch, batch, loss):
     """
 
     print(f"[{phase}] Epoch: {epoch} " +
-          f"({batch[0]}/{batch[1]}) Loss: {loss:.4f}")
+          f"({batch[0] + 1}/{batch[1]}) Loss: {loss:.4f}",
+          end="\n" if (batch[0] + 1) == batch[1] else "\r")
 
